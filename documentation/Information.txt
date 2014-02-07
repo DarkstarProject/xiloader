@@ -1,0 +1,62 @@
+Information For xiloader
+==========================================================================
+
+:: Locating INET Mutex Function
+
+    The current method of obtaining this function is via:
+        
+        const char* module = (g_Language == xiloader::Language::European) ? "polcoreeu.dll" : "polcore.dll";
+        auto result = (DWORD)xiloader::functions::FindPattern(module, (BYTE*)"\x8B\x56\x2C\x8B\x46\x28\x8B\x4E\x24\x52\x50\x51", "xxxxxxxxxxxx");
+        return (*(DWORD*)(result - 4) + (result));
+
+    As of 01/29/2014, the function that this is scanned from looks like this:
+    
+        1001B812 - 8D 4C 24 1C           - lea ecx,[esp+1C]
+        1001B816 - 51                    - push ecx
+        1001B817 - E8 84CCFFFF           - call 100184A0
+        1001B81C - 83 C4 10              - add esp,10
+        1001B81F - E8 7CE3FFFF           - call 10019BA0        <-- Call to INET Mutex function.
+        1001B824 - 8B 56 2C              - mov edx,[esi+2C]
+        1001B827 - 8B 46 28              - mov eax,[esi+28]
+        1001B82A - 8B 4E 24              - mov ecx,[esi+24]
+        1001B82D - 52                    - push edx
+        1001B82E - 50                    - push eax
+        1001B82F - 51                    - push ecx
+        1001B830 - 55                    - push ebp
+        1001B831 - E8 BA7C0000           - call 100234F0
+        1001B836 - 83 C4 10              - add esp,10
+    
+    The inner-call function body looks like this:
+        
+        10019BA0 - 00 05 C8A80A10        - add [100AA8C8],al
+        10019BA6 - 01 00                 - add [eax],eax
+        10019BA8 - 00 00                 - add [eax],al
+        10019BAA - C3                    - ret 
+
+    The above function can be located with the signature of:
+        00 05 ?? ?? ?? ?? 01 00 00 00 C3
+
+        
+:: Locating POL Connection Function
+
+    The current method of obtaining this function is via:
+        
+        const char* module = (g_Language == xiloader::Language::European) ? "polcoreeu.dll" : "polcore.dll";
+        auto result = (DWORD)xiloader::functions::FindPattern(module, (BYTE*)"\x81\xC6\x38\x03\x00\x00\x83\xC4\x04\x81\xFE", "xxxxxxxxxxx");
+        return (*(DWORD*)(result - 10));
+    
+    As of 01/29/2014, the function that this is scanned from looks like this:
+    
+        1001E980 - 56                    - push esi
+        1001E981 - E8 7AD00000           - call 1002BA00
+        1001E986 - BE 204B4010           - mov esi,10404B20 : [00000000] <-- Pointer to connection object.
+        1001E98B - 56                    - push esi
+        1001E98C - E8 0FB8FFFF           - call 1001A1A0
+        1001E991 - 81 C6 38030000        - add esi,00000338
+        1001E997 - 83 C4 04              - add esp,04
+        1001E99A - 81 FE 00584010        - cmp esi,10405800 : [00000000]
+        1001E9A0 - 7C E9                 - jnge 1001E98B
+        1001E9A2 - E8 99D00000           - call 1002BA40
+        1001E9A7 - 5E                    - pop esi
+        1001E9A8 - C3                    - ret 
+
