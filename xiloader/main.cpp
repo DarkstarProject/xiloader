@@ -78,7 +78,7 @@ DWORD ApplyHairpinFixThread(LPVOID lpParam)
     } while (GetModuleHandleA("FFXiMain.dll") == NULL);
 
     /* Convert server address.. */
-    g_NewServerAddress = atoi(g_ServerAddress.c_str());
+    xiloader::network::ResolveHostname(g_ServerAddress.c_str(), &g_NewServerAddress);
 
     // Locate the main hairpin location..
     //
