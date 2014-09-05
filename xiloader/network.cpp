@@ -215,7 +215,7 @@ namespace xiloader
         char sendBuffer[1024] = { 0 };
 
         /* Create connection if required.. */
-        if (sock->s == NULL || sock->s == INVALID_SOCKET)
+        if (sock->s == 0 || sock->s == INVALID_SOCKET)
         {
             if (!xiloader::network::CreateConnection(sock, "54231"))
                 return false;
