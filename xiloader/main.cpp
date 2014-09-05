@@ -55,12 +55,17 @@ extern "C"
 /**
  * @brief Hairpin fix codecave.
  */
-__declspec(naked) void HairpinFixCave(void)
+#ifndef __GNUC__
+__declspec(naked)
+#endif
+void HairpinFixCave(void)
 {
+#ifndef __GNUC__
     __asm mov eax, g_NewServerAddress
     __asm mov [edx + 0x012E90], eax
     __asm mov [edx], eax
     __asm jmp g_HairpinReturnAddress
+#endif
 }
 
 /**
@@ -339,6 +344,101 @@ inline LPVOID FindCharacters(void** commFuncs)
     return lpCharTable;
 }
 
+#ifdef __GNUC__
+static HRESULT (WINAPI* Real_CoCreateInstance)(REFCLSID, IUnknown*, DWORD, REFIID, void**) = nullptr;
+void _install_module(BYTE *head);
+
+HRESULT WINAPI Mine_CoCreateInstance(REFCLSID rclsid, IUnknown* outer, DWORD flags, REFIID riid, void **ppv)
+{
+    HRESULT hr = Real_CoCreateInstance(rclsid, outer, flags, riid, ppv);
+    if (SUCCEEDED(hr)) {
+        _install_module((BYTE*)GetModuleHandleA("polcore.dll"));
+        _install_module((BYTE*)GetModuleHandleA("polcoreE.dll"));
+        _install_module((BYTE*)GetModuleHandleA("FFXi.dll"));
+        _install_module((BYTE*)GetModuleHandleA("FFXiMain.dll"));
+    }
+    return hr;
+}
+
+void _install_func(IMAGE_THUNK_DATA *iat, DWORD hook)
+{
+    if (iat->u1.Function == hook)
+        return;
+
+    DWORD old;
+    if (VirtualProtect(&iat->u1.Function, 4, PAGE_EXECUTE_READWRITE, &old)) {
+        iat->u1.Function = hook;
+        VirtualProtect(&iat->u1.Function, 4, old, &old);
+    }
+}
+
+void _try_ws2(BYTE *head, LPCSTR dllname, IMAGE_IMPORT_DESCRIPTOR *imp)
+{
+    if (_stricmp(dllname, "Ws2_32.dll") != 0)
+        return;
+
+    IMAGE_THUNK_DATA *pint = (IMAGE_THUNK_DATA*)(head + imp->OriginalFirstThunk);
+    IMAGE_THUNK_DATA *piat = (IMAGE_THUNK_DATA*)(head + imp->FirstThunk);
+    for (; piat->u1.Function; ++piat, ++pint) {
+        if (IMAGE_SNAP_BY_ORDINAL(pint->u1.Ordinal)) {
+            DWORD id = IMAGE_ORDINAL(pint->u1.Ordinal);
+            if (id != 52)
+                continue;
+
+            _install_func(piat, (DWORD)Mine_gethostbyname);
+        }
+    }
+}
+
+void _try_ole32(BYTE *head, LPCSTR dllname, IMAGE_IMPORT_DESCRIPTOR *imp)
+{
+    if (_stricmp(dllname, "Ole32.dll") != 0)
+        return;
+
+    IMAGE_THUNK_DATA *pint = (IMAGE_THUNK_DATA*)(head + imp->OriginalFirstThunk);
+    IMAGE_THUNK_DATA *piat = (IMAGE_THUNK_DATA*)(head + imp->FirstThunk);
+    for (; piat->u1.Function; ++piat, ++pint) {
+        if (!IMAGE_SNAP_BY_ORDINAL(pint->u1.Ordinal)) {
+            LPCSTR procname = (LPCSTR) ((IMAGE_IMPORT_BY_NAME*)(head + pint->u1.AddressOfData))->Name;
+            if (_stricmp(procname, "CoCreateInstance") != 0)
+                continue;
+
+            _install_func(piat, (DWORD)Mine_CoCreateInstance);
+        }
+    }
+}
+
+void _install_module(BYTE *head)
+{
+    if(!head)
+        return;
+
+    IMAGE_DOS_HEADER *dos = (IMAGE_DOS_HEADER*)(head + 0);
+    IMAGE_NT_HEADERS *nt  = (IMAGE_NT_HEADERS*)(head + dos->e_lfanew);
+    IMAGE_DATA_DIRECTORY *dir = nt->OptionalHeader.DataDirectory + IMAGE_DIRECTORY_ENTRY_IMPORT;
+
+    if (!dir->VirtualAddress || !dir->Size)
+        return;
+
+    IMAGE_IMPORT_DESCRIPTOR *imp = (IMAGE_IMPORT_DESCRIPTOR*)(head + dir->VirtualAddress);
+    for (; imp->FirstThunk; ++imp) {
+        LPCSTR dllname = (LPCSTR)(head + imp->Name);
+        _try_ws2(head, dllname, imp);
+        _try_ole32(head, dllname, imp);
+    }
+}
+
+static void hook(void)
+{
+    HMODULE self = GetModuleHandleA(NULL);
+    HMODULE ole = GetModuleHandleA("Ole32.dll");
+    HMODULE ws2 = GetModuleHandleA("Ws2_32.dll");
+    Real_CoCreateInstance = (HRESULT(WINAPI*)(REFCLSID, IUnknown*, DWORD, REFIID, void**))GetProcAddress(ole, "CoCreateInstance");
+    Real_gethostbyname = (struct hostent*(WSAAPI*)(const char*))GetProcAddress(ws2, "gethostbyname");
+    _install_module((BYTE*)self);
+}
+#endif
+
 /**
  * @brief Main program entrypoint.
  *
@@ -389,6 +489,7 @@ int __cdecl main(int argc, char* argv[])
         return 1;
     }
 
+#ifndef __GNUC__
     /* Attach detour for gethostbyname.. */
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
@@ -402,6 +503,9 @@ int __cdecl main(int argc, char* argv[])
         xiloader::console::output(xiloader::color::error, "Failed to detour function 'gethostbyname'. Cannot continue!");
         return 1;
     }
+#else
+    hook();
+#endif
 
     /* Read Command Arguments */
     for (auto x = 1; x < argc; ++x)
@@ -612,11 +716,13 @@ int __cdecl main(int argc, char* argv[])
         xiloader::console::output(xiloader::color::error, "Failed to resolve server hostname.");
     }
 
+#ifndef __GNUC__
     /* Detach detour for gethostbyname. */
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourDetach(&(PVOID&)Real_gethostbyname, Mine_gethostbyname);
     DetourTransactionCommit();
+#endif
 
     /* Cleanup COM and Winsock */
     CoUninitialize();

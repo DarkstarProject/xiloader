@@ -86,7 +86,11 @@ namespace xiloader
         /* Parse the incoming message.. */
         char buffer[1024] = { 0 };
         va_start(args, format);
+#ifdef __GNUC__
+        vsnprintf(buffer, sizeof(buffer), format, args);
+#else
         vsprintf_s(buffer, format, args);
+#endif
         va_end(args);
 
         /* Format the timestamp.. */
@@ -121,7 +125,11 @@ namespace xiloader
         /* Parse the incoming message.. */
         char buffer[1024] = { 0 };
         va_start(args, format);
+#ifdef __GNUC__
+        vsnprintf(buffer, sizeof(buffer), format, args);
+#else
         vsprintf_s(buffer, format, args);
+#endif
         va_end(args);
 
         /* Format the timestamp.. */

@@ -29,9 +29,9 @@ This file is part of DarkStar-server source code.
 #endif
 
 #pragma comment(lib, "WS2_32.lib")
-#include <WinSock2.h>
+#include <winsock2.h>
 
-#include <Windows.h>
+#include <windows.h>
 #include <process.h>
 #include <stdint.h>
 #include <string>

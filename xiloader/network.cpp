@@ -130,7 +130,8 @@ namespace xiloader
         }
 
         *sock = INVALID_SOCKET;
-        while (*sock == INVALID_SOCKET) {
+        while (*sock == INVALID_SOCKET)
+        {
             /* Create the listening socket.. */
             *sock = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
             if (*sock == INVALID_SOCKET)

@@ -28,7 +28,7 @@ This file is part of DarkStar-server source code.
 #pragma once
 #endif
 
-#include <Windows.h>
+#include <windows.h>
 #include <iostream>
 #include <string>
 #include <time.h>
