@@ -203,7 +203,7 @@ int __cdecl main(int argc, char* argv[])
     /* Output the DarkStar banner.. */
     xiloader::console::output(xiloader::color::error, "==========================================================");
     xiloader::console::output(xiloader::color::success, "DarkStar Boot Loader (c) 2014 DarkStar Team");
-    xiloader::console::output(xiloader::color::lightpurple, "Bug Reports: http://bugs.dspt.info");
+    xiloader::console::output(xiloader::color::lightpurple, "Bug Reports: https://github.com/DarkstarProject/darkstar/issues");
     xiloader::console::output(xiloader::color::lightpurple, "Git Repo   : https://github.com/DarkstarProject/darkstar");
     xiloader::console::output(xiloader::color::error, "==========================================================");
 
