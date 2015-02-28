@@ -41,6 +41,9 @@ CRITICAL_SECTION g_CriticalSection; // Critical section object to prevent consol
 DWORD g_NewServerAddress; // Hairpin server address to be overriden with.
 DWORD g_HairpinReturnAddress; // Hairpin return address to allow the code cave to return properly.
 
+static float g_DrawDistance = 20.0f;
+static float g_MobDistance = 20.0f;
+
 /**
  * @brief Detour function definitions.
  */
@@ -58,6 +61,161 @@ __declspec(naked) void HairpinFixCave(void)
     __asm mov [edx + 0x012E90], eax
     __asm mov [edx], eax
     __asm jmp g_HairpinReturnAddress
+}
+
+/**
+ * @brief Modifies FPS lock.
+ *
+ * @param lpParam       Thread param object.
+ *
+ * @return Non-important return.
+ */
+DWORD ApplyFPSHack(LPVOID lpParam)
+{
+    UNREFERENCED_PARAMETER(lpParam);
+
+    do
+    {
+        /* Sleep until we find FFXiMain loaded.. */
+        Sleep(100);
+    } while (GetModuleHandleA("FFXiMain.dll") == NULL);
+
+    static float frameskip = 60.0f;
+
+    auto raddr = (DWORD)xiloader::functions::FindPattern("FFXiMain.dll", (BYTE*)"\x89\x46\x28\xD9\x46\x28\xD8\x1D", "xxxxxxxx");
+    if (raddr == 0)
+    {
+        xiloader::console::output(xiloader::color::error, "Failed to locate frame skip address!");
+        return 0;
+    }
+
+    *(unsigned long*)(raddr + 0x8) = (unsigned long)&frameskip;
+
+    auto raddr2 = (DWORD)xiloader::functions::FindPattern("FFXiMain.dll", (BYTE*)"\xC7\x46\x28\x00\x00\xA0\x41\xD8\x15", "xxxxxxxxx");
+    if (raddr2 == 0)
+    {
+        xiloader::console::output(xiloader::color::error, "Failed to locate frame skip address!");
+        return 0;
+    }
+
+    *(unsigned long*)(raddr2 + 0x9) = (unsigned long)&frameskip;
+
+    struct {
+        char *pattern;
+        char *mask;
+        DWORD offset;
+    } regions[4] = {
+        { "\x6A\x04\xE8\xFF\xFF\xFF\xFF\xA0", "xxx????x", 0x1 }, // 15FPS (04) [Fishing]
+        { "\x6A\x02\x66\xC7\x41\x3A", "xxxxxx", 0x1 }, // 30FPS (02) [???]
+        { "\x6A\x02\x81\xE2", "xxxx", 0x1 }, // 30FPS (02) [Zoning]
+        // { "\xC2\x04\x00\x90\x90\x90\x90\x6A\x02\xE8", "xxxxxxxx?x", 0x8 }, // 30FPS (02) [Startup]
+        { "\x75\x0A\x6A\x02\xE8", "xxxx", 0x3 }, // 30FPS (02) [Title/Logout]
+    };
+
+    DWORD addr[4];
+    for (int i = 0; i < 4; ++i) {
+        addr[i] = (DWORD)xiloader::functions::FindPattern("FFXiMain.dll", (BYTE*)regions[i].pattern, regions[i].mask);
+        if (addr[i] == 0)
+        {
+            xiloader::console::output(xiloader::color::error, "Failed to locate FPS cap address! (%d)", i);
+            return 0;
+        }
+    }
+
+    for (int i = 0; i < 4; ++i)
+        *(BYTE*)(addr[i] + regions[i].offset) = 0x01;
+
+    xiloader::console::output(xiloader::color::success, "FPS hack applied!");
+    return 0;
+}
+
+/**
+ * @brief Modifies draw distance larger.
+ *
+ * @param lpParam       Thread param object.
+ *
+ * @return Non-important return.
+ */
+DWORD ApplyDrawDistanceHack(LPVOID lpParam)
+{
+    UNREFERENCED_PARAMETER(lpParam);
+
+    do
+    {
+        /* Sleep until we find FFXiMain loaded.. */
+        Sleep(100);
+    } while (GetModuleHandleA("FFXiMain.dll") == NULL);
+
+    auto addr = (DWORD)xiloader::functions::FindPattern("FFXiMain.dll", (BYTE*)"\x8B\xC1\x48\x74\x08\xD8\x0D", "xxxxxxx");
+    if (addr == 0)
+    {
+        xiloader::console::output(xiloader::color::error, "Failed to locate draw distance address!");
+        return 0;
+    }
+
+    *(unsigned long*)(addr + 0x07) = (unsigned long)&g_DrawDistance;
+
+    xiloader::console::output(xiloader::color::success, "Draw distance hack applied! (%.2f)", g_DrawDistance);
+    return 0;
+}
+
+/**
+ * @brief Modifies mob distance larger.
+ *
+ * @param lpParam       Thread param object.
+ *
+ * @return Non-important return.
+ */
+DWORD ApplyMobDistanceHack(LPVOID lpParam)
+{
+    UNREFERENCED_PARAMETER(lpParam);
+
+    do
+    {
+        /* Sleep until we find FFXiMain loaded.. */
+        Sleep(100);
+    } while (GetModuleHandleA("FFXiMain.dll") == NULL);
+
+    auto addr = (DWORD)xiloader::functions::FindPattern("FFXiMain.dll", (BYTE*)"\x8B\xC1\x48\x74\x08\xD8\x0D", "xxxxxxx");
+    if (addr == 0)
+    {
+        xiloader::console::output(xiloader::color::error, "Failed to locate mob distance address!");
+        return 0;
+    }
+
+    *(unsigned long*)(addr + 0x0F) = (unsigned long)&g_MobDistance;
+
+    xiloader::console::output(xiloader::color::success, "Mob distance hack applied! (%.2f)", g_MobDistance);
+    return 0;
+}
+
+/**
+ * @brief Disables swear filter.
+ *
+ * @param lpParam       Thread param object.
+ *
+ * @return Non-important return.
+ */
+DWORD ApplySwearFilterHack(LPVOID lpParam)
+{
+    UNREFERENCED_PARAMETER(lpParam);
+
+    do
+    {
+        /* Sleep until we find FFXiMain loaded.. */
+        Sleep(100);
+    } while (GetModuleHandleA("FFXiMain.dll") == NULL);
+
+    auto addr = (DWORD)xiloader::functions::FindPattern("FFXiMain.dll", (BYTE*)"\x83\xF8\xFF\x89\x46\x04", "xx?xxx");
+    if (addr == 0)
+    {
+        xiloader::console::output(xiloader::color::error, "Failed to locate swear filter address!");
+        return 0;
+    }
+
+    *(BYTE*)(addr + 0x02) = 0x0;
+    xiloader::console::output(xiloader::color::success, "Swear filter hack applied!");
+    return 0;
 }
 
 /**
@@ -94,7 +252,7 @@ DWORD ApplyHairpinFixThread(LPVOID lpParam)
     }
 
     // Locate zoning IP change address..
-    // 
+    //
     // As of 07.08.2013
     //      74 08                 - je FFXiMain.dll+E5E72
     //      8B 0D 68322B03        - mov ecx, [FFXiMain.dll+463268]
@@ -192,6 +350,10 @@ inline LPVOID FindCharacters(void** commFuncs)
 int __cdecl main(int argc, char* argv[])
 {
     bool bUseHairpinFix = false;
+    bool bUseDrawDistanceHack = false;
+    bool bUseMobDistanceHack = false;
+    bool bUseFPSHack = false;
+    bool bUseSwearHack = false;
 
     /* Create critical section for console output.. */
     if (!InitializeCriticalSectionAndSpinCount(&g_CriticalSection, 0x00000400))
@@ -199,7 +361,7 @@ int __cdecl main(int argc, char* argv[])
         xiloader::console::output(xiloader::color::error, "Failed to initialize critical section! Error code: %d", GetLastError());
         return 0;
     }
-    
+
     /* Output the DarkStar banner.. */
     xiloader::console::output(xiloader::color::error, "==========================================================");
     xiloader::console::output(xiloader::color::success, "DarkStar Boot Loader (c) 2015 DarkStar Team");
@@ -294,6 +456,36 @@ int __cdecl main(int argc, char* argv[])
             continue;
         }
 
+        if (!_strnicmp(argv[x], "--drawdistance", 14))
+        {
+            if ((g_DrawDistance = atof(argv[++x])) <= 0.0f)
+                g_DrawDistance = 20.0f;
+
+            bUseDrawDistanceHack = true;
+            continue;
+        }
+
+        if (!_strnicmp(argv[x], "--mobdistance", 14))
+        {
+            if ((g_MobDistance = atof(argv[++x])) <= 0.0f)
+                g_MobDistance = 20.0f;
+
+            bUseMobDistanceHack = true;
+            continue;
+        }
+
+        if (!_strnicmp(argv[x], "--fps", 5))
+        {
+            bUseFPSHack = true;
+            continue;
+        }
+
+        if (!_strnicmp(argv[x], "--swear", 7))
+        {
+            bUseSwearHack = true;
+            continue;
+        }
+
         xiloader::console::output(xiloader::color::warning, "Found unknown command argument: %s", argv[x]);
     }
 
@@ -315,6 +507,26 @@ int __cdecl main(int argc, char* argv[])
             if (bUseHairpinFix)
             {
                 CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ApplyHairpinFixThread, NULL, 0, NULL);
+            }
+
+            if (bUseDrawDistanceHack)
+            {
+                CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ApplyDrawDistanceHack, NULL, 0, NULL);
+            }
+
+            if (bUseMobDistanceHack)
+            {
+                CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ApplyMobDistanceHack, NULL, 0, NULL);
+            }
+
+            if (bUseFPSHack)
+            {
+                CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ApplyFPSHack, NULL, 0, NULL);
+            }
+
+            if (bUseSwearHack)
+            {
+                CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ApplySwearFilterHack, NULL, 0, NULL);
             }
 
             /* Create listen servers.. */
@@ -359,18 +571,23 @@ int __cdecl main(int argc, char* argv[])
                 lpCommandTable[POLFUNC_INSTALL_FOLDER](xiloader::functions::GetRegistryPlayOnlineInstallFolder(g_Language));
                 lpCommandTable[POLFUNC_INET_MUTEX]();
 
-                /* Attempt to create FFXi instance..*/
-                IFFXiEntry* ffxi = NULL;
-                if (CoCreateInstance(xiloader::CLSID_FFXiEntry, NULL, 0x17, xiloader::IID_IFFXiEntry, (LPVOID*)&ffxi) != S_OK)
-                {
-                    xiloader::console::output(xiloader::color::error, "Failed to initialize instance of FFxi!");
-                }
-                else
-                {
-                    /* Attempt to start Final Fantasy.. */
-                    IUnknown* message = NULL;
-                    ffxi->GameStart(polcore, &message);
-                    ffxi->Release();
+                const bool bot = false;
+                if (bot) {
+                    /* Bot code here.. */
+                } else {
+                    /* Attempt to create FFXi instance.. */
+                    IFFXiEntry* ffxi = NULL;
+                    if (CoCreateInstance(xiloader::CLSID_FFXiEntry, NULL, 0x17, xiloader::IID_IFFXiEntry, (LPVOID*)&ffxi) != S_OK)
+                    {
+                        xiloader::console::output(xiloader::color::error, "Failed to initialize instance of FFxi!");
+                    }
+                    else
+                    {
+                        /* Attempt to start Final Fantasy.. */
+                        IUnknown* message = NULL;
+                        ffxi->GameStart(polcore, &message);
+                        ffxi->Release();
+                    }
                 }
 
                 /* Cleanup polcore object.. */
@@ -379,7 +596,7 @@ int __cdecl main(int argc, char* argv[])
             }
 
             /* Cleanup threads.. */
-            g_IsRunning = false;    
+            g_IsRunning = false;
             TerminateThread(hFFXiServer, 0);
             TerminateThread(hPolServer, 0);
 

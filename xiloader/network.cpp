@@ -129,25 +129,30 @@ namespace xiloader
             return false;
         }
 
-        /* Create the listening socket.. */
-        *sock = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
-        if (*sock == INVALID_SOCKET)
-        {
-            xiloader::console::output(xiloader::color::error, "Failed to create listening socket.");
+        *sock = INVALID_SOCKET;
+        while (*sock == INVALID_SOCKET) {
+            /* Create the listening socket.. */
+            *sock = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+            if (*sock == INVALID_SOCKET)
+            {
+                xiloader::console::output(xiloader::color::error, "Failed to create listening socket.");
 
-            freeaddrinfo(addr);
-            return false;
-        }
+                freeaddrinfo(addr);
+                return false;
+            }
 
-        /* Bind to the local address.. */
-        if (bind(*sock, addr->ai_addr, (int)addr->ai_addrlen) == SOCKET_ERROR)
-        {
-            xiloader::console::output(xiloader::color::error, "Failed to bind to listening socket.");
+            int yes = 1;
+            setsockopt(*sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(yes));
 
-            freeaddrinfo(addr);
-            closesocket(*sock);
-            *sock = INVALID_SOCKET;
-            return false;
+            /* Bind to the local address.. */
+            if (bind(*sock, addr->ai_addr, (int)addr->ai_addrlen) == SOCKET_ERROR)
+            {
+                xiloader::console::output(xiloader::color::error, "Failed to bind to listening socket.");
+
+                closesocket(*sock);
+                *sock = INVALID_SOCKET;
+                Sleep(2000);
+            }
         }
 
         freeaddrinfo(addr);
