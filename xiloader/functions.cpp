@@ -77,11 +77,12 @@ namespace xiloader
     unsigned int functions::GetRegistryLanguage(int lang)
     {
         const char szLanguageTags[4][255] = { { "" }, { "US" }, { "EU" }, { "EU" } };
+        const char szLanguageTags2[4][255] = { { "" }, { "Enix" }, { "Enix" }, { "Enix" } };
         char szRegistryPath[MAX_PATH] = { 0 };
 
         HKEY hKey = NULL;
 
-        sprintf_s(szRegistryPath, MAX_PATH, "SOFTWARE\\PlayOnline%s\\SquareEnix\\PlayOnlineViewer\\Settings", szLanguageTags[lang]);
+        sprintf_s(szRegistryPath, MAX_PATH, "SOFTWARE\\PlayOnline%s\\Square%s\\PlayOnlineViewer\\Settings", szLanguageTags[lang], szLanguageTags2[lang]);
         if (!(::RegOpenKeyExA(HKEY_LOCAL_MACHINE, szRegistryPath, 0, KEY_QUERY_VALUE | KEY_WOW64_32KEY, &hKey) == ERROR_SUCCESS))
             return 1;
 
