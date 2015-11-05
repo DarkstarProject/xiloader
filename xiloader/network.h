@@ -32,6 +32,7 @@ This file is part of DarkStar-server source code.
 #include <WS2tcpip.h>
 #include <Windows.h>
 #include <string>
+#include <conio.h>
 
 #include "console.h"
 

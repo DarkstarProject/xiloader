@@ -241,18 +241,13 @@ namespace xiloader
                 std::cin >> g_Username;
                 std::cout << "Password: ";
 
-				/* Hide the user's input */
-				HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
-				DWORD mode = 0;
-				GetConsoleMode(hStdin, &mode);
-				SetConsoleMode(hStdin, mode & (~ENABLE_ECHO_INPUT));
-
-				/* Read in the password */
-                std::cin >> g_Password;
-
-				/* Reset the console mode */
-				SetConsoleMode(hStdin, mode);
-				//tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+				/* Read in each char and instead of displaying it. display a "*" */
+				char ch;
+				while ((ch = static_cast<char>(_getch())) != '\r')
+				{
+					g_Password.push_back(ch);
+					std::cout << '*';
+				}
 
                 std::cout << std::endl;
 
