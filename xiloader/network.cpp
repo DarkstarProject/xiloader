@@ -240,12 +240,25 @@ namespace xiloader
                 std::cout << "\nUsername: ";
                 std::cin >> g_Username;
                 std::cout << "Password: ";
+                g_Password.clear();
+
                 /* Read in each char and instead of displaying it. display a "*" */
                 char ch;
                 while ((ch = static_cast<char>(_getch())) != '\r')
                 {
-                    g_Password.push_back(ch);
-                    std::cout << '*';
+                    if (ch == '\b')
+                    {
+                        if (g_Password.size())
+                        {
+                            g_Password.pop_back();
+                            std::cout << "\b \b";
+                        }
+                    }
+                    else
+                    {
+                        g_Password.push_back(ch);
+                        std::cout << '*';
+                    }
                 }
                 std::cout << std::endl;
 
