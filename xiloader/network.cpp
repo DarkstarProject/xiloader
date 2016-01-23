@@ -244,8 +244,21 @@ namespace xiloader
                 char ch;
                 while ((ch = static_cast<char>(_getch())) != '\r')
                 {
-                    g_Password.push_back(ch);
-                    std::cout << '*';
+                    /* Handle Backspace. */
+                    if (ch == '\b')
+                    {
+                        if (g_Password.size() >= 1)
+                        {
+                            g_Password.pop_back();
+                            std::cout << "\b \b";
+                        }
+                    }
+                    /* Read in normal chars. */
+                    else
+                    {
+                        g_Password.push_back(ch);
+                        std::cout << '*';
+                    }
                 }
                 std::cout << std::endl;
 
