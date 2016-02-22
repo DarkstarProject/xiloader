@@ -68,35 +68,96 @@ namespace xiloader
     }
 
     /**
+     * @brief Obtains the PlayOnline registry key.
+     *  "SOFTWARE\PlayOnlineXX"
+     *
+     * @param lang      The language id the loader was started with.
+     *
+     * @return registry pathname.
+     */
+    const char* functions::GetRegistryPlayOnlineKey(int lang)
+    {
+        static const char*  RegistryKeys[3] =
+        {
+            "SOFTWARE\\PlayOnline",   // xiloader::Japanese
+            "SOFTWARE\\PlayOnlineUS", // xiloader::English
+            "SOFTWARE\\PlayOnlineEU"  // xiloader::European
+        };
+
+        if(lang < 0)
+            lang = 0;
+        if(lang > 2)
+            lang = 2;
+
+        return RegistryKeys[lang];
+    }
+
+    /**
      * @brief Obtains the PlayOnline language id from the system registry.
      *
      * @param lang          The language id the loader was started with.
      *
      * @return The language id from the registry, 1 otherwise.
      */
-    unsigned int functions::GetRegistryLanguage(int lang)
+    int functions::GetRegistryPlayOnlineLanguage(int lang)
     {
-        const char szLanguageTags[4][255] = { { "" }, { "US" }, { "EU" }, { "EU" } };
-        const char szLanguageTags2[4][255] = { { "" }, { "Enix" }, { "Enix" }, { "Enix" } };
-        char szRegistryPath[MAX_PATH] = { 0 };
+        const char*  SquareEnix = (lang == 0 /*xiloader::Japanese*/) ? "Square" : "SquareEnix";
 
-        HKEY hKey = NULL;
+        char  szRegistryPath[MAX_PATH];
+        sprintf_s(szRegistryPath, MAX_PATH, "%s\\%s\\PlayOnlineViewer\\Settings", functions::GetRegistryPlayOnlineKey(lang), SquareEnix);
 
-        sprintf_s(szRegistryPath, MAX_PATH, "SOFTWARE\\PlayOnline%s\\Square%s\\PlayOnlineViewer\\Settings", szLanguageTags[lang], szLanguageTags2[lang]);
-        if (!(::RegOpenKeyExA(HKEY_LOCAL_MACHINE, szRegistryPath, 0, KEY_QUERY_VALUE | KEY_WOW64_32KEY, &hKey) == ERROR_SUCCESS))
-            return 1;
+        HKEY  hKey = NULL;
+        DWORD dwRegValue = 0;
+        DWORD dwRegSize = sizeof(DWORD);
+        DWORD dwRegType = REG_DWORD;
 
-        DWORD dwEntrySize = MAX_PATH;
-        DWORD dwEntryType = REG_DWORD;
-        DWORD dwLanguage = 0;
-        if (!(::RegQueryValueExA(hKey, "Language", NULL, &dwEntryType, (LPBYTE)&dwLanguage, &dwEntrySize) == ERROR_SUCCESS))
+        if (::RegOpenKeyExA(HKEY_LOCAL_MACHINE, szRegistryPath, 0, KEY_QUERY_VALUE | KEY_WOW64_32KEY, &hKey) == ERROR_SUCCESS)
         {
+            if (::RegQueryValueExA(hKey, "Language", NULL, &dwRegType, (LPBYTE)&dwRegValue, &dwRegSize) == ERROR_SUCCESS)
+            {
+                if (dwRegType == REG_DWORD && dwRegSize == sizeof(DWORD))
+                    lang = (int) dwRegValue;
+            }
             ::RegCloseKey(hKey);
-            return 1;
         }
 
-        ::RegCloseKey(hKey);
-        return dwLanguage;
+        return lang;
     }
-    
+
+    /**
+     * @brief Obtains the PlayOnlineViewer folder from the system registry.
+     *  "C:\Program Files\PlayOnline\PlayOnlineViewer"
+     *
+     * @param lang      The language id the loader was started with.
+     *
+     * @return installation folder path.
+     */
+    const char* functions::GetRegistryPlayOnlineInstallFolder(int lang)
+    {
+        static char  InstallFolder[MAX_PATH] = {0};
+
+        char  szRegistryPath[MAX_PATH];
+        sprintf_s(szRegistryPath, MAX_PATH, "%s\\InstallFolder", functions::GetRegistryPlayOnlineKey(lang));
+
+        HKEY  hKey = NULL;
+        DWORD dwRegSize = sizeof(InstallFolder);
+        DWORD dwRegType = REG_SZ;
+        bool  found = false;
+
+        if (::RegOpenKeyExA( HKEY_LOCAL_MACHINE, szRegistryPath, 0, KEY_QUERY_VALUE | KEY_WOW64_32KEY, &hKey) == ERROR_SUCCESS)
+        {
+            if (::RegQueryValueExA(hKey, "1000", NULL, &dwRegType, (LPBYTE)InstallFolder, &dwRegSize) == ERROR_SUCCESS)
+            {
+                if (dwRegType == REG_SZ && dwRegSize > 0 && dwRegSize < sizeof(InstallFolder))
+                     found = true;
+            }
+            ::RegCloseKey(hKey);
+        }
+
+        if (found == false)
+            InstallFolder[0] = '\0';
+
+        return InstallFolder;
+    }
+
 }; // namespace xiloader

@@ -48,7 +48,8 @@ This file is part of DarkStar-server source code.
 #define POLFUNC_INET_MUTEX      0x032F
 #define POLFUNC_REGISTRY_LANG   0x03C5
 #define POLFUNC_FFXI_LANG       0x01A4
-#define POLFUNC_INTERFACE_LANG  0x016F
+#define POLFUNC_REGISTRY_KEY    0x016F
+#define POLFUNC_INSTALL_FOLDER  0x007D
 
 namespace xiloader
 {
@@ -71,14 +72,6 @@ namespace xiloader
     /* FFXi COM Object Definitions */
     const CLSID CLSID_FFXiEntry = { 0x989D790D, 0x6236, 0x11D4, { 0x80, 0xE9, 0x00, 0x10, 0x5A, 0x81, 0xE8, 0x90 } };
     const IID IID_IFFXiEntry = { 0x989D790C, 0x6236, 0x11D4, { 0x80, 0xE9, 0x00, 0x10, 0x5A, 0x81, 0xE8, 0x90 } };
-
-    /* PlayOnline Registry Keys */
-    const char RegistryKeys[3][255] =
-    {
-        { "SOFTWARE\\PlayOnline" },
-        { "SOFTWARE\\PlayOnlineUS" },
-        { "SOFTWARE\\PlayOnlineEU" }
-    };
 
     /* PlayOnline Language Enumeration */
     enum Language

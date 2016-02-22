@@ -68,13 +68,33 @@ namespace xiloader
         static DWORD FindPattern(const char* moduleName, const unsigned char* lpPattern, const char* pszMask);
 
         /**
+         * @brief Obtains the PlayOnline registry key.
+         *  "SOFTWARE\PlayOnlineXX"
+         *
+         * @param lang      The language id the loader was started with.
+         *
+         * @return registry pathname.
+         */
+        static const char* GetRegistryPlayOnlineKey(int lang);
+
+        /**
          * @brief Obtains the PlayOnline language id from the system registry.
          *
          * @param lang      The language id the loader was started with.
          *
          * @return The language id from the registry, 1 otherwise.
          */
-        static unsigned int GetRegistryLanguage(int lang);
+        static int GetRegistryPlayOnlineLanguage(int lang);
+
+        /**
+         * @brief Obtains the PlayOnlineViewer folder from the system registry.
+         *  "C:\Program Files\PlayOnline\PlayOnlineViewer"
+         *
+         * @param lang      The language id the loader was started with.
+         *
+         * @return installation folder path.
+         */
+        static const char* GetRegistryPlayOnlineInstallFolder(int lang);
     };
 
 }; // namespace xiloader
