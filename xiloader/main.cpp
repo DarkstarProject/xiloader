@@ -354,8 +354,9 @@ int __cdecl main(int argc, char* argv[])
 
                 /* Invoke the setup functions for polcore.. */
                 lpCommandTable[POLFUNC_REGISTRY_LANG](g_Language);
-                lpCommandTable[POLFUNC_FFXI_LANG](xiloader::functions::GetRegistryLanguage(g_Language));
-                lpCommandTable[POLFUNC_INTERFACE_LANG](xiloader::RegistryKeys[g_Language]);
+                lpCommandTable[POLFUNC_FFXI_LANG](xiloader::functions::GetRegistryPlayOnlineLanguage(g_Language));
+                lpCommandTable[POLFUNC_REGISTRY_KEY](xiloader::functions::GetRegistryPlayOnlineKey(g_Language));
+                lpCommandTable[POLFUNC_INSTALL_FOLDER](xiloader::functions::GetRegistryPlayOnlineInstallFolder(g_Language));
                 lpCommandTable[POLFUNC_INET_MUTEX]();
 
                 /* Attempt to create FFXi instance..*/
