@@ -41,7 +41,7 @@ namespace xiloader
             if (*pszMask == 'x' && *lpDataPtr != *lpPattern)
                 return false;
         }
-        return (*pszMask) == NULL;
+        return (*pszMask) == 0;
     }
 
     /**
