@@ -101,6 +101,15 @@ namespace xiloader
      */
     class console
     {
+    private:
+
+        /**
+         * @brief Shows or hides the console based on the provided argument.
+         *
+         * @param visible   "true" to show the console, "false" to hide it.
+         */
+        static void visible(bool visible);
+
     public:
 
         /**
@@ -119,6 +128,16 @@ namespace xiloader
          * @param ...       The arguments to fill the format.
          */
         static void output(const xiloader::color::colors& c, const char* format, ...);
+
+        /**
+         * @brief Hides the console window.
+         */
+        static void hide();
+
+        /**
+         * @brief Shows the console window.
+         */
+        static void show();
     };
 
 }; // namespace xiloader

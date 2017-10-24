@@ -35,6 +35,7 @@ std::string g_Username = ""; // The username being logged in with.
 std::string g_Password = ""; // The password being logged in with.
 char* g_CharacterList = NULL; // Pointer to the character list data being sent from the server.
 bool g_IsRunning = false; // Flag to determine if the network threads should hault.
+bool g_Hide = false; // Determines whether or not to hide the console window after FFXI starts.
 CRITICAL_SECTION g_CriticalSection; // Critical section object to prevent console logging issues from threads.
 
 /* Hairpin Fix Variables */
@@ -294,6 +295,13 @@ int __cdecl main(int argc, char* argv[])
             continue;
         }
 
+        /* Hide Argument */
+        if (!_strnicmp(argv[x], "--hide", 6))
+        {
+            g_Hide = true;
+            continue;
+        }
+
         xiloader::console::output(xiloader::color::warning, "Found unknown command argument: %s", argv[x]);
     }
 
@@ -368,7 +376,9 @@ int __cdecl main(int argc, char* argv[])
                 {
                     /* Attempt to start Final Fantasy.. */
                     IUnknown* message = NULL;
+                    xiloader::console::hide();
                     ffxi->GameStart(polcore, &message);
+                    xiloader::console::show();
                     ffxi->Release();
                 }
 
