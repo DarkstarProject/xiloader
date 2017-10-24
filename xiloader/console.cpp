@@ -23,8 +23,11 @@ This file is part of DarkStar-server source code.
 
 #include "console.h"
 
+#include <ShObjIdl.h>
+
 /* Global Externs */
 extern CRITICAL_SECTION g_CriticalSection;
+extern bool g_Hide;
 
 namespace xiloader
 {
@@ -132,6 +135,59 @@ namespace xiloader
         std::cout << std::endl << xiloader::color::lightyelllow << timestamp << c << buffer;
 
         LeaveCriticalSection(&g_CriticalSection);
+    }
+
+    /**
+     * @brief Shows or hides the console based on the provided argument.
+     *
+     * @param visible   "true" to show the console, "false" to hide it.
+     */
+    void console::visible(bool visible)
+    {
+        if (!g_Hide)
+            return;
+
+        HWND console = GetConsoleWindow();
+
+        // Adjust the task bar
+        ITaskbarList* taskbar = nullptr;
+        HRESULT hr = CoCreateInstance(
+            CLSID_TaskbarList,
+            nullptr,
+            CLSCTX_INPROC_SERVER,
+            IID_ITaskbarList,
+            reinterpret_cast<void**>(&taskbar));
+        if (SUCCEEDED(hr))
+        {
+            if (visible)
+            {
+                taskbar->AddTab(console);
+            }
+            else
+            {
+                taskbar->DeleteTab(console);
+            }
+            taskbar->Release();
+        }
+
+        // Adjust the window's visibility
+        ShowWindow(console, visible ? SW_SHOW : SW_HIDE);
+    }
+
+    /**
+     * @brief Hides the console window.
+     */
+    void console::hide()
+    {
+        visible(false);
+    }
+
+    /**
+     * @brief Shows the console window.
+     */
+    void console::show()
+    {
+        visible(true);
     }
 
 }; // namespace xiloader
