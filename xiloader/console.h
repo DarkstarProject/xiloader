@@ -111,7 +111,7 @@ namespace xiloader
         template<typename... Args>
         static void output(char const* format, Args... args)
         {
-            output(xiloader::color::none, format, args...);
+            output(xiloader::color::white, format, args...);
         }
 
         /**
@@ -131,10 +131,6 @@ namespace xiloader
             ::tm timeinfo;
             ::_localtime32_s(&timeinfo, &rawtime);
 
-            /* Parse the incoming message */
-            char buffer[1024];
-            ::snprintf(buffer, sizeof buffer, format, args...);
-
             /* Format the timestamp */
             char timestamp[256];
             ::strftime(timestamp, sizeof timestamp, "[%m/%d/%y %H:%M:%S] ", &timeinfo);
@@ -142,7 +138,11 @@ namespace xiloader
             /* Output the timestamp */
             print(xiloader::color::lightyelllow, timestamp);
 
+            /* Parse the incoming message */
+            char buffer[1024];
+            ::snprintf(buffer, sizeof buffer, format, args...);
             /* Output the message */
+
             print(c, buffer);
 
             std::cout << std::endl;
