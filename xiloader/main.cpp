@@ -36,7 +36,6 @@ std::string g_Password = ""; // The password being logged in with.
 char* g_CharacterList = NULL; // Pointer to the character list data being sent from the server.
 bool g_IsRunning = false; // Flag to determine if the network threads should hault.
 bool g_Hide = false; // Determines whether or not to hide the console window after FFXI starts.
-CRITICAL_SECTION g_CriticalSection; // Critical section object to prevent console logging issues from threads.
 
 /* Hairpin Fix Variables */
 DWORD g_NewServerAddress; // Hairpin server address to be overriden with.
@@ -194,19 +193,12 @@ int __cdecl main(int argc, char* argv[])
 {
     bool bUseHairpinFix = false;
 
-    /* Create critical section for console output.. */
-    if (!InitializeCriticalSectionAndSpinCount(&g_CriticalSection, 0x00000400))
-    {
-        xiloader::console::output(xiloader::color::error, "Failed to initialize critical section! Error code: %d", GetLastError());
-        return 0;
-    }
-    
     /* Output the DarkStar banner.. */
-    xiloader::console::output(xiloader::color::error, "==========================================================");
-    xiloader::console::output(xiloader::color::success, "DarkStar Boot Loader (c) 2015 DarkStar Team");
+    xiloader::console::output(xiloader::color::lightred, "==========================================================");
+    xiloader::console::output(xiloader::color::lightgreen, "DarkStar Boot Loader (c) 2015 DarkStar Team");
     xiloader::console::output(xiloader::color::lightpurple, "Bug Reports: https://github.com/DarkstarProject/darkstar/issues");
     xiloader::console::output(xiloader::color::lightpurple, "Git Repo   : https://github.com/DarkstarProject/darkstar");
-    xiloader::console::output(xiloader::color::error, "==========================================================");
+    xiloader::console::output(xiloader::color::lightred, "==========================================================");
 
     /* Initialize Winsock */
     WSADATA wsaData = { 0 };
@@ -417,8 +409,6 @@ int __cdecl main(int argc, char* argv[])
 
     xiloader::console::output(xiloader::color::error, "Closing...");
     Sleep(2000);
-
-    DeleteCriticalSection(&g_CriticalSection);
 
     return ERROR_SUCCESS;
 }

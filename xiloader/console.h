@@ -31,70 +31,52 @@ This file is part of DarkStar-server source code.
 #include <Windows.h>
 #include <iostream>
 #include <string>
-#include <time.h>
+#include <ctime>
 
 namespace xiloader
 {
     /**
-     * @brief Color namespace containing console color information.
-     */
-    namespace color
+    * @brief Console color enumeration.
+    */
+    enum class color
     {
-        /**
-        * @brief Console color enumeration.
-        */
-        enum colors
-        {
-            /* Custom color code to print out the current timestamp. */
-            timestamp = 0,
+        none = 0,
 
-            /* Red color codes. */
-            red = FOREGROUND_RED,
-            lightred = FOREGROUND_RED | FOREGROUND_INTENSITY,
+        /* Red color codes. */
+        red = FOREGROUND_RED,
+        lightred = FOREGROUND_RED | FOREGROUND_INTENSITY,
 
-            /* Green color codes. */
-            green = FOREGROUND_GREEN,
-            lightgreen = FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+        /* Green color codes. */
+        green = FOREGROUND_GREEN,
+        lightgreen = FOREGROUND_GREEN | FOREGROUND_INTENSITY,
 
-            /* Blue color codes. */
-            blue = FOREGROUND_BLUE,
-            lightblue = FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+        /* Blue color codes. */
+        blue = FOREGROUND_BLUE,
+        lightblue = FOREGROUND_BLUE | FOREGROUND_INTENSITY,
 
-            /* Cyan color codes. */
-            cyan = FOREGROUND_BLUE | FOREGROUND_GREEN,
-            lightcyan = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+        /* Cyan color codes. */
+        cyan = FOREGROUND_BLUE | FOREGROUND_GREEN,
+        lightcyan = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY,
 
-            /* Yellow color codes. */
-            yellow = FOREGROUND_GREEN | FOREGROUND_RED,
-            lightyelllow = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY,
+        /* Yellow color codes. */
+        yellow = FOREGROUND_GREEN | FOREGROUND_RED,
+        lightyelllow = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY,
 
-            /* Purple color codes. */
-            purple = FOREGROUND_BLUE | FOREGROUND_RED,
-            lightpurple = FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY,
+        /* Purple color codes. */
+        purple = FOREGROUND_BLUE | FOREGROUND_RED,
+        lightpurple = FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY,
 
-            /* White color codes. */
-            grey = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
-            white = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+        /* White color codes. */
+        grey = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
+        white = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
 
-            /* Common color codes. */
-            debug = lightcyan,
-            error = lightred,
-            info = white,
-            success = lightgreen,
-            warning = lightyelllow
-        };
-
-    }; // namespace color
-
-    /**
-     * @brief Operator overload to handle custom color tags in an ostream.
-     *
-     * @param s     The incoming stream to append to.
-     * @param c     The color tag to set the console foreground to.
-     *
-     * @return The incoming stream.
-     */
-    inline std::ostream& operator << (std::ostream& s, const xiloader::color::colors& c);
+        /* Common color codes. */
+        debug = lightcyan,
+        error = lightred,
+        info = white,
+        success = lightgreen,
+        warning = lightyelllow
+    };
 
     /**
      * @brief Console class containing helper functions for console output.
@@ -110,24 +92,61 @@ namespace xiloader
          */
         static void visible(bool visible);
 
+        /**
+         * @brief Prints a text fragment with the specified color to the console.
+         * 
+         * @param c         The color to print the fragment with.
+         * @param message   The fragment to print.
+         */
+        static void print(xiloader::color c, std::string const& message);
+
     public:
 
         /**
          * @brief Prints the given message to the console.
          *
          * @param format    The format of the message to print.
-         * @param ...       The arguments to fill the format.
+         * @param args      The arguments to fill the format.
          */
-        static void output(const char* format, ...);
+        template<typename... Args>
+        static void output(char const* format, Args... args)
+        {
+            output(xiloader::color::none, format, args...);
+        }
 
         /**
-         * @brief Prints the given message to the console with a specific color.
+         * @brief Prints the given message to the console with the specific color.
          *
          * @param c         The color to print the message with.
          * @param format    The format of the message to print.
-         * @param ...       The arguments to fill the format.
+         * @param args      The arguments to fill the format.
          */
-        static void output(const xiloader::color::colors& c, const char* format, ...);
+        template<typename... Args>
+        static void output(xiloader::color c, char const* format, Args... args)
+        {
+            /* Get the current timestamp */
+            ::__time32_t rawtime;
+            ::_time32(&rawtime);
+
+            ::tm timeinfo;
+            ::_localtime32_s(&timeinfo, &rawtime);
+
+            /* Parse the incoming message */
+            char buffer[1024];
+            ::snprintf(buffer, sizeof buffer, format, args...);
+
+            /* Format the timestamp */
+            char timestamp[256];
+            ::strftime(timestamp, sizeof timestamp, "[%m/%d/%y %H:%M:%S] ", &timeinfo);
+
+            /* Output the timestamp */
+            print(xiloader::color::lightyelllow, timestamp);
+
+            /* Output the message */
+            print(c, buffer);
+
+            std::cout << std::endl;
+        }
 
         /**
          * @brief Hides the console window.
