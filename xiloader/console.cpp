@@ -38,12 +38,6 @@ namespace xiloader
      */
     void console::print(xiloader::color c, std::string const& message)
     {
-        if (c == xiloader::color::none)
-        {
-            std::cout << message;
-            return;
-        }
-
         auto stdout_handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
         ::CONSOLE_SCREEN_BUFFER_INFO info;
         ::GetConsoleScreenBufferInfo(stdout_handle, &info);

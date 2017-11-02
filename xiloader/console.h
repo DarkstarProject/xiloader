@@ -40,8 +40,6 @@ namespace xiloader
     */
     enum class color
     {
-        none = 0,
-
         /* Red color codes. */
         red = FOREGROUND_RED,
         lightred = FOREGROUND_RED | FOREGROUND_INTENSITY,
