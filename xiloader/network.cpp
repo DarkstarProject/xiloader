@@ -217,7 +217,7 @@ namespace xiloader
         }
 
         /* Determine if we should auto-login.. */
-        bool bUseAutoLogin = (g_Username.size() > 0 && g_Password.size() > 0) && bFirstLogin;
+        bool bUseAutoLogin = !g_Username.empty() && !g_Password.empty() && bFirstLogin;
         if (bUseAutoLogin)
             xiloader::console::output(xiloader::color::lightgreen, "Autologin activated!");
 
@@ -228,15 +228,16 @@ namespace xiloader
             xiloader::console::output("   1.) Login");
             xiloader::console::output("   2.) Create New Account");
             xiloader::console::output("==========================================================");
-            printf("\n\nEnter a selection: ");
+            printf("\nEnter a selection: ");
 
             std::string input;
             std::cin >> input;
+            std::cout << std::endl;
 
             /* User wants to log into an existing account.. */
-            if (input.c_str()[0] == '1')
+            if (input == "1")
             {
-                xiloader::console::output("Please enter your login information..");
+                xiloader::console::output("Please enter your login information.");
                 std::cout << "\nUsername: ";
                 std::cin >> g_Username;
                 std::cout << "Password: ";
@@ -264,12 +265,11 @@ namespace xiloader
 
                 sendBuffer[0x20] = 0x10;
             }
-
             /* User wants to create a new account.. */
-            if (input.c_str()[0] == '2')
+            else if (input == "2")
             {
             create_account:
-                xiloader::console::output("Please enter your desired login information..");
+                xiloader::console::output("Please enter your desired login information.");
                 std::cout << "\nUsername (3-15 characters): ";
                 std::cin >> g_Username;
                 std::cout << "Password (6-15 characters): ";
@@ -286,6 +286,8 @@ namespace xiloader
 
                 sendBuffer[0x20] = 0x20;
             }
+
+            std::cout << std::endl;
         }
         else
         {
@@ -306,26 +308,26 @@ namespace xiloader
         switch (recvBuffer[0])
         {
         case 0x0001: // Success (Login)
-            xiloader::console::output("Successfully logged in as %s!", g_Username.c_str());
+            xiloader::console::output(xiloader::color::success, "Successfully logged in as %s!", g_Username.c_str());
             sock->AccountId = *(UINT32*)(recvBuffer + 0x01);
             closesocket(sock->s);
             sock->s = INVALID_SOCKET;
             return true;
 
         case 0x0002: // Error (Login)
-            xiloader::console::output("Failed to login. Invalid username / password.");
+            xiloader::console::output(xiloader::color::error, "Failed to login. Invalid username or password.");
             closesocket(sock->s);
             sock->s = INVALID_SOCKET;
             return false;
 
         case 0x0003: // Success (Create Account)
-            xiloader::console::output("Account successfully created!");
+            xiloader::console::output(xiloader::color::success, "Account successfully created!");
             closesocket(sock->s);
             sock->s = INVALID_SOCKET;
             return false;
 
         case 0x0004: // Error (Create Account)
-            xiloader::console::output("Failed to create the new account.\nUsername already taken!");
+            xiloader::console::output(xiloader::color::error, "Failed to create the new account. Username already taken.");
             closesocket(sock->s);
             sock->s = INVALID_SOCKET;
             return false;
