@@ -6,6 +6,7 @@ CLS
 :: -1 - variable used for server not found
 :: -2 - DirectPlay not installed
 :: -3 - POL path not found
+:: -4 - xiloader not in POL path
 
 IF %1.==. (
     @ECHO Server not provided:
@@ -40,7 +41,13 @@ FOR %%I IN %POL_PATH_REGKEYS% DO (
 
 :PATH_FOUND
 IF DEFINED POL_PATH (
-    START /d "%POL_PATH% xiloader" --server %1
+    IF EXIST "%POL_PATH%\xiloader.exe" (
+        START /d "%POL_PATH%" xiloader --server %1
+    ) ELSE (
+        @ECHO xiloader.exe not found in POL path
+        @ECHO Copy xiloader.exe to %POL_PATH%
+        EXIT /B -4
+    )
 ) ELSE (
     @ECHO POL path not found.
     EXIT /B -3
