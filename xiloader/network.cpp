@@ -247,7 +247,9 @@ namespace xiloader
                 char ch;
                 while ((ch = static_cast<char>(_getch())) != '\r')
                 {
-                    if (ch == '\b')
+                    if (ch == '\0')
+                        continue;
+                    else if (ch == '\b')
                     {
                         if (g_Password.size())
                         {
