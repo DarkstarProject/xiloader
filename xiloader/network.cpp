@@ -227,6 +227,7 @@ namespace xiloader
             xiloader::console::output("What would you like to do?");
             xiloader::console::output("   1.) Login");
             xiloader::console::output("   2.) Create New Account");
+            xiloader::console::output("   3.) Change Account Password");
             xiloader::console::output("==========================================================");
             printf("\nEnter a selection: ");
 
@@ -234,9 +235,11 @@ namespace xiloader
             std::cin >> input;
             std::cout << std::endl;
 
-            /* User wants to log into an existing account.. */
-            if (input == "1")
+            /* User wants to log into an existing account or modify an existing account's password. */
+            if (input == "1" || input == "3")
             {
+                if (input == "3")
+                    xiloader::console::output("Before resetting your password, first verify your account details.");
                 xiloader::console::output("Please enter your login information.");
                 std::cout << "\nUsername: ";
                 std::cin >> g_Username;
@@ -265,7 +268,8 @@ namespace xiloader
                 }
                 std::cout << std::endl;
 
-                sendBuffer[0x20] = 0x10;
+                char event_code = (input == "1") ? 0x10 : 0x30;
+                sendBuffer[0x20] = event_code;
             }
             /* User wants to create a new account.. */
             else if (input == "2")
@@ -275,6 +279,7 @@ namespace xiloader
                 std::cout << "\nUsername (3-15 characters): ";
                 std::cin >> g_Username;
                 std::cout << "Password (6-15 characters): ";
+                g_Password.clear();
                 std::cin >> g_Password;
                 std::cout << "Repeat Password           : ";
                 std::cin >> input;
@@ -333,6 +338,57 @@ namespace xiloader
             closesocket(sock->s);
             sock->s = INVALID_SOCKET;
             return false;
+
+        case 0x0005: // Request for updated password to change to.
+        {
+            xiloader::console::output(xiloader::color::success, "Log in verified for user %s.", g_Username.c_str());
+            std::string confirmed_password = "";
+            do
+            {
+                std::cout << "Enter new password (6-15 characters): ";
+                g_Password.clear();
+                std::cin >> g_Password;
+                std::cout << "Repeat Password           : ";
+                std::cin >> confirmed_password;
+                std::cout << std::endl;
+
+                if (g_Password != confirmed_password)
+                {
+                    xiloader::console::output(xiloader::color::error, "Passwords did not match! Please try again.");
+                }
+            } while (g_Password != confirmed_password);
+
+            /* Clear the buffers */
+            memset(sendBuffer, 0, 33);
+            memset(recvBuffer, 0, 16);
+
+            /* Copy the new password into the buffer. */
+            memcpy(sendBuffer, g_Password.c_str(), 16);
+
+            /* Send info to server and obtain response.. */
+            send(sock->s, sendBuffer, 16, 0);
+            recv(sock->s, recvBuffer, 16, 0);
+
+            /* Handle the final result. */
+            switch (recvBuffer[0])
+            {
+            case 0x0006: // Success (Changed Password)
+                xiloader::console::output(xiloader::color::success, "Password updated successfully!");
+                std::cout << std::endl;
+                g_Password.clear();
+                closesocket(sock->s);
+                sock->s = INVALID_SOCKET;
+                return false;
+
+            case 0x0007: // Error (Changed Password)
+                xiloader::console::output(xiloader::color::error, "Failed to change password.");
+                std::cout << std::endl;
+                g_Password.clear();
+                closesocket(sock->s);
+                sock->s = INVALID_SOCKET;
+                return false;
+            }
+        }
         }
 
         /* We should not get here.. */
